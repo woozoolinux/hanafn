@@ -30,7 +30,8 @@ Hostname()
 echo "=== HostName Check ==="
 echo
 
-hostname
+cur_hostname=$(hostname)
+echo "hostname = ${cur_hostname}"
 
 echo
 echo "===  End HostName ==="
@@ -66,11 +67,37 @@ echo
 echo "=== End FileSystem ==="
 }
 
+LogMessage()
+{
+echo
+echo "=== LogMessage Check ==="
+echo
+
+LOG_CHECK=$(cat /var/log/messages* | egrep "^$(date -d '1 months ago' +%h)|^$(date +%h)" | egrep -iw '(I/O error|rejecting I/O to offline device|killing request|hostbyte=DID_NO_CONNECT|mark as failed|remaining active paths|parity|Abort command issued|Hardware Error|SYN flooding|fail|error|fault|down|WARN|Call Trace|reboo)'| egrep -i -v '(warn=True|auth|segfault|cdrom)'| egrep -i -v '(auth|segfault|cdrom|fd0|sr0|vxvm)'| egrep -v 'VCS' | egrep -v 'ACPI Error:\ SMBus|ACPI Error:\ Method parse|dockerd-current|Shutting Down Daemons|Shutting down..' | wc -l)
+
+  if [ "$LOG_CHECK" -eq 0 ]; then
+   echo "LOG Status: OK"
+  else
+   echo "LOG Status: BAD"
+  fi
+echo
+
+cat /var/log/messages* | egrep "^$(date -d '1 months ago' +%h)|^$(date +%h)" | egrep -iw '(I/O error|rejecting I/O to offline device|killing request|hostbyte=DID_NO_CONNECT|mark as failed|remaining active paths|parity|Abort command issued|Hardware Error|SYN flooding|fail|error|fault|down|WARN|Call Trace|reboo)'| egrep -i -v '(warn=True|auth|segfault|cdrom)'| egrep -i -v '(auth|segfault|cdrom|fd0|sr0|vxvm)'| egrep -v 'VCS' | egrep -v 'ACPI Error:\ SMBus|ACPI Error:\ Method parse|dockerd-current|Shutting Down Daemons|Shutting down..'
+echo
+echo "=== End LogMessage ==="
+
+}
+
+
+
 main()
 {
 Hostname
 OsVersion
 FileSystem
+
+
+LogMessage
 }
 
 main
