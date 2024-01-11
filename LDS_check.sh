@@ -88,6 +88,21 @@ echo "=== End LogMessage ==="
 
 }
 
+UserInfo()
+{
+echo
+echo "=== UserInfo Check ==="
+echo
+
+cur_userc=$(cat /etc/passwd | wc -l)
+cur_groupc=$(cat /etc/group | wc -l)
+
+echo "user_count = ${cur_userc}"
+echo "group_count = ${cur_groupc}"
+echo
+echo "=== End UserInfo ==="
+echo
+}
 
 
 main()
@@ -95,9 +110,10 @@ main()
 Hostname
 OsVersion
 FileSystem
+UserInfo
 
 
-LogMessage
+#LogMessage
 }
 
 main
