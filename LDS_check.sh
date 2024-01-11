@@ -104,6 +104,22 @@ echo "=== End UserInfo ==="
 echo
 }
 
+NetworkPacket()
+{
+echo
+echo "=== NetworkPacket Check ==="
+echo
+
+for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv")
+ do
+ ifconfig $i
+ done
+
+echo
+echo "=== End NetworkPacket ==="
+echo
+}
+
 
 main()
 {
@@ -111,6 +127,7 @@ Hostname
 OsVersion
 FileSystem
 UserInfo
+NetworkPacket
 
 
 #LogMessage
