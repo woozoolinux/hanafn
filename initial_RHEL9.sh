@@ -39,7 +39,7 @@ systemctl enable chornyd
 
 LocalRepo()
 {
-
+echo
 }
 
 PackageInstall()
