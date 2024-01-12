@@ -23,18 +23,20 @@ Package_list="net-tools sysfsutils pciutils sysstat traceroute createrepo sos lv
 NTP()
 {
 
-#diable default chrony pool
+# Diable default chrony pool
 sed -i  "/^pool/s/pool/#pool/" /etc/chrony.conf
 
+# Insert time server
 for i in $NTP_Address
 do
-	echo $i
+	echo "server ${i} iburst" >> /etc/chrony.conf
 done
-#sed -i "/^pool/s/.*/server ${NTP_Address}/" /etc/chrony.conf
 
-
+# start and enable chronyd service
 systemctl restart chronyd
-systemctl enable chornyd
+systemctl enable chronyd
+
+echo "chronyd service configured"
 }
 
 LocalRepo()
