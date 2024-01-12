@@ -30,16 +30,17 @@ Package_list="net-tools sysfsutils pciutils sysstat traceroute createrepo sos lv
 
 NTP()
 {
-
-# Diable default chrony pool
-sed -i  "/^pool/s/pool/#pool/" /etc/chrony.conf
-
-# Set time server if NTP_Adress configured
+echo "=== NTP SET ==="
+# Executed only when the NTP_Address variable is set.
 if [ -z ${NTP_Address} ];
 then
         echo "NTP WARNING!!"
         echo "NO NTP ADDRESS, PLEASE SET NTP VARIABLE!!"
 else
+        # Diable default chrony pool
+        sed -i  "/^pool/s/pool/#pool/" /etc/chrony.conf
+
+        # Set time server if NTP_Adress configured
         for i in $NTP_Address
         do
         	echo "server ${i} iburst" >> /etc/chrony.conf
@@ -50,9 +51,7 @@ else
         systemctl enable chronyd
 	echo "chronyd service configured"
 fi
-
-
-
+echo "=== NTP FINISH ==="
 }
 
 LocalRepo()
