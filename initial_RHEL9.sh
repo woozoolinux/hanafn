@@ -17,13 +17,37 @@ OS_VERSION=`cat /etc/redhat-release | grep -v ^# | awk '{print $(NF-1)}' | cut -
 
 
 # Variable SET
-NTP_Address=111.15.30.23 
+NTP_Address="111.15.30.23 11.22.33.44" 
+Package_list="net-tools sysfsutils pciutils sysstat traceroute createrepo sos lvm2 java-1.8.0-openjdk-devel"
 
 NTP()
 {
-sed -i "/^pool/s/.*/server 111.15.30.23/" /etc/chrony.conf
+
+#diable default chrony pool
+sed -i  "/^pool/s/pool/#pool/" /etc/chrony.conf
+
+for i in $NTP_Address
+do
+	echo $i
+done
+#sed -i "/^pool/s/.*/server ${NTP_Address}/" /etc/chrony.conf
+
+
 systemctl restart chronyd
 systemctl enable chornyd
 }
 
-install net-tools sysfsutils pciutils sysstat traceroute createrepo sos lvm2 java-1.8.0-openjdk-devel
+LocalRepo()
+{
+
+}
+
+PackageInstall()
+{
+dnf install -y ${Package_list}
+}
+
+
+NTP
+#PackageInstall
+
