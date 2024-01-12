@@ -120,6 +120,17 @@ echo "=== End NetworkPacket ==="
 echo
 }
 
+NetworkRoute()
+{
+echo
+echo "=== NetworkRoute Check ==="
+echo 
+
+route -n
+echo 
+echo "=== End NetworkRoute ==="
+echo
+}
 
 main()
 {
@@ -128,6 +139,7 @@ OsVersion
 FileSystem
 UserInfo
 NetworkPacket
+NetworkRoute
 
 
 #LogMessage
