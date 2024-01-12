@@ -34,7 +34,7 @@ NTP()
 # Diable default chrony pool
 sed -i  "/^pool/s/pool/#pool/" /etc/chrony.conf
 
-# Set time server
+# Set time server if NTP_Adress configured
 if [ -z ${NTP_Address} ];
 then
         echo "NTP WARNING!!"
@@ -44,14 +44,15 @@ else
         do
         	echo "server ${i} iburst" >> /etc/chrony.conf
         done
+
+        # start and enable chronyd service
+        systemctl restart chronyd
+        systemctl enable chronyd
+	echo "chronyd service configured"
 fi
 
 
-# start and enable chronyd service
-systemctl restart chronyd
-systemctl enable chronyd
 
-echo "chronyd service configured"
 }
 
 LocalRepo()
