@@ -92,6 +92,6 @@ echo "=== Package Install FINISH ==="
 
 
 NTP
-PackageInstall
 LocalRepo
+PackageInstall
 
