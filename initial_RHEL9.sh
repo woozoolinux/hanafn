@@ -25,9 +25,9 @@ NTP_Address="111.15.30.23"
 ## ex) Package_list="net-tools sysstat"
 Package_list="net-tools sysfsutils pciutils sysstat traceroute createrepo sos lvm2 java-1.8.0-openjdk-devel"
 
-
+## SET LOCAL REPO
 repo_source_dir="/iso"
-repo_file="/etc/yum.repos.d/local2.repo"
+repo_file="/etc/yum.repos.d/local.repo"
 
 
 NTP()
@@ -58,32 +58,40 @@ echo "=== NTP FINISH ==="
 
 LocalRepo()
 {
+echo "=== Yum Repository SET ==="
 repo_text=$(cat <<EOF
 [BaseOS]
 name=BaseOS
-baseurl=file:/${repo_source_dir}/BaseOS
+baseurl=file:${repo_source_dir}/BaseOS
 gpgcheck=0
 enabled=1
 [AppStream]
 name=AppStream
-baseurl=file:/${repo_source_dir}/AppStream
+baseurl=file:${repo_source_dir}/AppStream
 gpgcheck=0
 enabled=1
 EOF
 )
 
-#echo "$repo_text" > $repo_file
-echo "$repo_text"
+echo "$repo_text" > $repo_file
 
+echo "=== Yum Repository FINISH ==="
 }
 
 PackageInstall()
 {
-dnf install -y ${Package_list}
+echo "=== Package install ==="
+if [ -z ${Package_list} ];
+then
+        echo "NO Package install"
+else
+	dnf install -y ${Package_list}
+fi
+echo "=== Package Install FINISH ==="
 }
 
 
 #NTP
-#PackageInstall
-LocalRepo
+PackageInstall
+#LocalRepo
 
