@@ -30,6 +30,17 @@ repo_file="/etc/yum.repos.d/local.repo"
 Package_list="net-tools sysfsutils pciutils sysstat traceroute createrepo sos lvm2 java-1.8.0-openjdk-devel"
 
 
+# Prompt user with warning message
+read -p "Did you finish copying the packages to the ${repo_source_dir} directory? (y/n): " userInput
+
+# Check if input is 'y'
+if [ "$userInput" == "y" ]; then
+        continue
+else
+        exit 1
+fi
+
+
 
 NTP()
 {
