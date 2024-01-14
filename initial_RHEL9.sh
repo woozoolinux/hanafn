@@ -21,13 +21,14 @@ OS_VERSION=`cat /etc/redhat-release | grep -v ^# | awk '{print $(NF-1)}' | cut -
 ## ex) NTP_Address="123.123.123.1 123.123.123.2"
 NTP_Address="111.15.30.23"
 
+## SET LOCAL REPO
+repo_source_dir="/iso"
+repo_file="/etc/yum.repos.d/local.repo"
+
 ## Enter the package name you want to install
 ## ex) Package_list="net-tools sysstat"
 Package_list="net-tools sysfsutils pciutils sysstat traceroute createrepo sos lvm2 java-1.8.0-openjdk-devel"
 
-## SET LOCAL REPO
-repo_source_dir="/iso"
-repo_file="/etc/yum.repos.d/local.repo"
 
 
 NTP()

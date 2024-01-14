@@ -1,11 +1,9 @@
 #!/bin/bash
 
-TEST=""
+                        if [ $(nmcli device status | grep connected | grep eth3 | wc -l) -ne 0 ];
+                        then
+                        echo test
+                        else
+                        echo else
+                        fi
 
-if [ -z ${TEST} ];
-then
-	echo "WARNING!!"
-	echo "NO NTP ADDRESS, PLEASE SET NTP VARIABLE!!"
-else	
-	echo NOT OKAY
-fi
