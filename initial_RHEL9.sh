@@ -27,7 +27,7 @@ repo_file="/etc/yum.repos.d/local.repo"
 
 ## Enter the package name you want to install
 ## ex) Package_list="net-tools sysstat"
-Package_list="net-tools sysfsutils pciutils sysstat traceroute createrepo sos lvm2 java-1.8.0-openjdk-devel"
+Package_list="net-tools sysfsutils pciutils sysstat traceroute createrepo sos lvm2 java-1.8.0-openjdk-devel chrony vim-enhanced bash-completion"
 
 
 # Prompt user with warning message
@@ -103,7 +103,7 @@ echo "=== Package Install FINISH ==="
 }
 
 
-NTP
 LocalRepo
 PackageInstall
+NTP
 
