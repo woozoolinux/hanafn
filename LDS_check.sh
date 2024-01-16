@@ -244,6 +244,8 @@ then
 		echo "NTPD STATUS: OK"
 		echo
 		service ntpd status
+		echo "Current Time:"
+		ntpq -p
 	else
 		echo "NTPD STATUS: WARNING"
 	fi
