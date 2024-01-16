@@ -243,8 +243,6 @@ then
         then
                 cur_runlevel=$(cat /etc/inittab | grep -v ^# | grep ^id | cut -d: -f 2)
                 cur_enabled=$(chkconfig --list | grep -w ntpd | cut -d${cur_runlevel} -f 2 | awk '{print $1}' | cut -d: -f2)
-                echo "cur_runlevel=${cur_runlevel}"
-                echo "cur_enabled=${cur_enabled}"
 
                 if [ ${cur_enabled} == on ]
                 then
