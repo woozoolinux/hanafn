@@ -132,6 +132,51 @@ echo "=== End NetworkRoute ==="
 echo
 }
 
+BondingInfo()
+{
+echo
+echo "=== BondingInfo Check ==="
+echo 
+
+bonFlag=0
+mbond=`lsmod | grep bond`
+if [ -z "$mbond" ];then
+	echo ""
+	echo "Bonding Status: WARNING"
+   	echo "bond check result: bonding module not loading"
+else
+	bondlist=`ls /proc/net/bonding/*`
+	for i in $bondlist; do
+		echo "=${bondlist} Bonding Status="
+		cat $i
+		bondNum=`cat $i | egrep -A1 "Slave Interface"  | grep up| wc -l`
+		if [ "$bondNum" == 2 ]; then
+			continue			
+		else
+			bonInterface=`ls $bondlist | awk -F"/" '{print $NF}'`
+			echo ""
+			echo ""
+			echo "Bonding Status: WARNING"
+        		echo "Check $bonInterface status!!"
+			echo ""
+			bonFlag=3
+		fi
+	done
+
+if [ "$bonFlag" == 0 ]; then
+	echo ""
+	echo "Result"
+	echo "Bonding Status: OK"
+fi
+
+fi
+
+echo 
+echo "=== End BondingInfo ==="
+echo
+}
+
+
 main()
 {
 Hostname
@@ -140,6 +185,7 @@ FileSystem
 UserInfo
 NetworkPacket
 NetworkRoute
+BondingInfo
 
 
 #LogMessage
