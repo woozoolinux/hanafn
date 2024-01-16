@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This is System check script and available in RHEL7, RHEL8, RHEL9 version.
+# This is System check script and available in RHEL6, RHEL7, RHEL8, RHEL9 version.
 # Written by Linux Data System for Hana Financial Group.
 # FileName: LDS_check.sh
 # Versoin : 0.1.1v
@@ -229,6 +229,53 @@ echo "=== End Uptime ==="
 echo
 }
 
+NtpInfo()
+{
+echo
+echo "=== NtpInfo Check ==="
+echo 
+
+if [ ${OS_VERSION} -le 7 ];
+then
+	echo "RHEL6 or RHEL7"
+        systemctl status ntpd 2> /dev/null > /dev/null 
+	rhel7_ntp="$?"
+        systemctl status chronyd 2> /dev/null > /dev/null 
+	rhel7_chronyd="$?"
+        if [ "$rhel7_ntp" = 0 ] || [ "$rhel7_chronyd" = 0 ]
+        then
+		echo "NTPD STATUS: $NMSG"
+ 	else
+     		echo "NTPD STATUS: $WMSG"
+		echo ""
+		echo "- service chronyd status -"
+		systemctl status chronyd
+		
+ 	fi
+else
+	cur_ntp=`service ntpd status`
+ 	ntpdst="$?"
+ 	if [ "$ntpdst" = 0 ]; then
+     		echo "NTPD STATUS: $NMSG"
+ 	else
+     		echo "NTPD STATUS: $WMSG"
+		echo ""
+		echo "- service ntpd status -"
+		service ntpd status
+		echo ""
+		echo "- chkconfig ntpd status -"
+		chkconfig --list | grep ntpd
+		echo ""
+		
+ 	fi
+fi
+
+echo 
+echo "=== End NtpInfo ==="
+echo
+}
+
+
 main()
 {
 Hostname
@@ -240,6 +287,7 @@ NetworkRoute
 BondingInfo
 ZombieProcess
 Uptime
+NtpInfo
 
 
 #LogMessage
