@@ -236,20 +236,34 @@ echo "=== NtpInfo Check ==="
 echo 
 if [ ${OS_VERSION} -le 6 ];
 then
-	echo "RHEL6"
+        echo "RHEL6"
         service ntpd status &> /dev/null
-	rhel6_ntp="$?"
-	if [ "$rhel6_ntp" = 0 ]
-	then
-		echo "NTPD STATUS: OK"
-		echo
-		service ntpd status
-		echo "Current Time:"
-		ntpq -p
-	else
-		echo "NTPD STATUS: WARNING"
-	fi
+        rhel6_ntp="$?"
+        if [ "$rhel6_ntp" = 0 ]
+        then
+                cur_runlevel=$(cat /etc/inittab | grep -v ^# | grep ^id | cut -d: -f 2)
+                cur_enabled=$(chkconfig --list | grep -w ntpd | cut -d${cur_runlevel} -f 2 | awk '{print $1}' | cut -d: -f2)
+                echo "cur_runlevel=${cur_runlevel}"
+                echo "cur_enabled=${cur_enabled}"
+
+                if [ ${cur_enabled} == on ]
+                then
+                        echo "NTPD STATUS: OK"
+                        echo
+                        service ntpd status
+                        echo "Current Time:"
+                        ntpq -p
+                else
+                        echo "NTPD STATUS: WARNING"
+                        echo "NTPD DAEMON STARTED BUT NOT ENABLED"
+                        service ntpd status
+                fi
+        else
+                echo "NTPD STATUS: WARNING"
+                echo "NTPD NOT RUNNING"
+        fi
 fi
+
 
 
 if [ ${OS_VERSION} -eq 7 ];
