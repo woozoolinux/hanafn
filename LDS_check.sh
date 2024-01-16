@@ -176,6 +176,31 @@ echo "=== End BondingInfo ==="
 echo
 }
 
+ZombieProcess()
+{
+echo
+echo "=== ZombieProcess Check ==="
+echo 
+
+zombie=`ps aux | awk ' $8=="Z" || $8=="Z+" {print $0}' | wc -l`
+cur_zombie=`ps aux | awk ' $8=="Z" || $8=="Z+" {print $0}'`
+
+ if [ "$zombie" -gt 0 ]; then
+  echo "Zombie Process: $zombie "
+  echo ""
+  echo "Current zombie process status:"
+  ps aux | head -1
+  echo "$cur_zombie"
+ else
+  echo "No Zombie Process"
+  echo "Result: OK"
+ fi
+
+echo 
+echo "=== End ZombieProcess ==="
+echo
+}
+
 
 main()
 {
@@ -186,6 +211,7 @@ UserInfo
 NetworkPacket
 NetworkRoute
 BondingInfo
+ZombieProcess
 
 
 #LogMessage
