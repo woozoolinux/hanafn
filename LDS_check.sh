@@ -201,6 +201,33 @@ echo "=== End ZombieProcess ==="
 echo
 }
 
+Uptime()
+{
+echo
+echo "=== Uptime Check ==="
+echo 
+
+cur_uptime=`uptime | grep -w days`
+cur_uptime_min=`uptime | awk '{print $3}' | cut -d, -f 1`
+
+if [ -n "$cur_uptime" ]; 
+  then 
+  	days=`echo $cur_uptime | awk '{print $3}'`	
+ 	if [ "$days" -ge 365 ]; then
+   	echo "UPTIME: $days days"
+  	else
+   	echo "SYSTEM UPTIME: OK"
+   	echo "UPTIME: $days days"
+  	fi
+  else
+  echo -e "SYSTEM UPTIME: OK"	
+  echo "UPTIME: $cur_uptime_min min"
+fi
+
+echo 
+echo "=== End Uptime ==="
+echo
+}
 
 main()
 {
@@ -212,6 +239,7 @@ NetworkPacket
 NetworkRoute
 BondingInfo
 ZombieProcess
+Uptime
 
 
 #LogMessage
