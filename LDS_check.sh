@@ -288,6 +288,9 @@ then
 		else
 			echo "RESULT: WARNING"
                         echo "NTPD DAEMON STARTED BUT NOT ENABLED"
+			service ntpd status
+                        echo "Current Time:"
+                        ntpq -p
 		fi
     	elif [ "$rhel7_chronyd" = 0 ]
 	then
@@ -302,6 +305,11 @@ then
 		else
 			echo "RESULT: WARNING"
                         echo "CHRONYD DAEMON STARTED BUT NOT ENABLED"
+			echo
+                        systemctl status chronyd
+                        echo
+                        chronyc sources
+
 		fi
     	else
 		echo "RESULT: WARNING"	
@@ -327,6 +335,9 @@ then
 		else
 			echo "RESULT: WARNING"
                         echo "CHRONYD DAEMON STARTED BUT NOT ENABLED"
+			systemctl status chronyd 2> /dev/null
+                        echo
+                        chronyc sources
 		fi
         else
                 echo "RESULT: WARNING"
