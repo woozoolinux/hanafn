@@ -248,20 +248,20 @@ then
 
                 if [ ${cur_enabled} == on ]
                 then
-                        echo "NTPD STATUS: OK"
+                        echo "RESULT: OK"
                         echo
                         service ntpd status
                         echo "Current Time:"
                         ntpq -p
                 else
-                        echo "NTPD STATUS: WARNING"
+                        echo "RESULT: WARNING"
                         echo "NTPD DAEMON STARTED BUT NOT ENABLED"
                         service ntpd status
                         echo "Current Time:"
 			ntpq -p
                 fi
         else
-                echo "NTPD STATUS: WARNING"
+                echo "RESULT: WARNING"
                 echo "NTPD NOT RUNNING"
         fi
 fi
@@ -277,17 +277,35 @@ then
       	rhel7_chronyd="$?"
         if [ "$rhel7_ntp" = 0 ]
        	then
-    		echo "NTPD STATUS: OK"
-		echo
-		systemctl status ntpd
+		cur_ntp_enable=$(systemctl is-enabled ntpd)
+		if [ ${cur_ntp_enable} == enabled ]
+		then
+    			echo "RESULT: OK"
+			echo
+			systemctl status ntpd
+			echo
+			ntpq -p
+		else
+			echo "RESULT: WARNING"
+                        echo "NTPD DAEMON STARTED BUT NOT ENABLED"
+		fi
     	elif [ "$rhel7_chronyd" = 0 ]
 	then
-    		echo "NTPD STATUS: OK"
-		echo
-		systemctl status chronyd
+		cur_chrony_enable=$(systemctl is-enabled chronyd)
+		if [ ${cur_chrony_enable} == enabled ]
+		then
+    			echo "RESULT: OK"
+			echo
+			systemctl status chronyd
+			echo
+			chronyc sources
+		else
+			echo "RESULT: WARNING"
+                        echo "CHRONYD DAEMON STARTED BUT NOT ENABLED"
+		fi
     	else
-		echo "NTPD DAEMON NOT STARTED"
 		echo "RESULT: WARNING"	
+		echo "NTPD DAEMON NOT STARTED"
     	fi
 fi
 
@@ -298,11 +316,21 @@ then
         rhel8_chronyd="$?"
         if [ "$rhel8_chronyd" = 0 ]
 	then
-                echo "NTPD STATUS: OK"
-                systemctl status chronyd
+		cur_chrony8_enable=$(systemctl is-enabled chronyd)
+                if [ ${cur_chrony8_enable} == enabled ]
+                then
+                	echo "RESULT: OK"
+			echo
+                	systemctl status chronyd 2> /dev/null
+			echo
+			chronyc sources
+		else
+			echo "RESULT: WARNING"
+                        echo "CHRONYD DAEMON STARTED BUT NOT ENABLED"
+		fi
         else
-                echo "NTPD DAEMON NOT STARTED"
                 echo "RESULT: WARNING"
+                echo "NTPD DAEMON NOT STARTED"
         fi
 
 fi
