@@ -234,40 +234,59 @@ NtpInfo()
 echo
 echo "=== NtpInfo Check ==="
 echo 
-
-if [ ${OS_VERSION} -le 7 ];
+if [ ${OS_VERSION} -le 6 ];
 then
-	echo "RHEL6 or RHEL7"
-        systemctl status ntpd 2> /dev/null > /dev/null 
-	rhel7_ntp="$?"
-        systemctl status chronyd 2> /dev/null > /dev/null 
-	rhel7_chronyd="$?"
-        if [ "$rhel7_ntp" = 0 ] || [ "$rhel7_chronyd" = 0 ]
-        then
-		echo "NTPD STATUS: $NMSG"
- 	else
-     		echo "NTPD STATUS: $WMSG"
-		echo ""
-		echo "- service chronyd status -"
-		systemctl status chronyd
-		
- 	fi
-else
-	cur_ntp=`service ntpd status`
- 	ntpdst="$?"
- 	if [ "$ntpdst" = 0 ]; then
-     		echo "NTPD STATUS: $NMSG"
- 	else
-     		echo "NTPD STATUS: $WMSG"
-		echo ""
-		echo "- service ntpd status -"
+	echo "RHEL6"
+        service ntpd status &> /dev/null
+	rhel6_ntp="$?"
+	if [ "$rhel6_ntp" = 0 ]
+	then
+		echo "NTPD STATUS: OK"
+		echo
 		service ntpd status
-		echo ""
-		echo "- chkconfig ntpd status -"
-		chkconfig --list | grep ntpd
-		echo ""
-		
- 	fi
+	else
+		echo "NTPD STATUS: WARNING"
+	fi
+fi
+
+
+if [ ${OS_VERSION} -eq 7 ];
+then
+	echo "RHEL7"
+        systemctl status ntpd &> /dev/null
+    	rhel7_ntp="$?"
+        systemctl status chronyd &> /dev/null
+      	rhel7_chronyd="$?"
+        if [ "$rhel7_ntp" = 0 ]
+       	then
+    		echo "NTPD STATUS: OK"
+		echo
+		systemctl status ntpd
+    	elif [ "$rhel7_chronyd" = 0 ]
+	then
+    		echo "NTPD STATUS: OK"
+		echo
+		systemctl status chronyd
+    	else
+		echo "NTPD DAEMON NOT STARTED"
+		echo "RESULT: WARNING"	
+    	fi
+fi
+
+if [ ${OS_VERSION} -ge 8 ];
+then
+        echo "RHEL8 and later"
+        systemctl status chronyd &> /dev/null
+        rhel8_chronyd="$?"
+        if [ "$rhel8_chronyd" = 0 ]
+	then
+                echo "NTPD STATUS: OK"
+                systemctl status chronyd
+        else
+                echo "NTPD DAEMON NOT STARTED"
+                echo "RESULT: WARNING"
+        fi
+
 fi
 
 echo 
