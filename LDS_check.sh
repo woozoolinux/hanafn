@@ -257,6 +257,8 @@ then
                         echo "NTPD STATUS: WARNING"
                         echo "NTPD DAEMON STARTED BUT NOT ENABLED"
                         service ntpd status
+                        echo "Current Time:"
+			ntpq -p
                 fi
         else
                 echo "NTPD STATUS: WARNING"
