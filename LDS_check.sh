@@ -382,7 +382,6 @@ then
 
 elif [ ${OS_VERSION} -ge 7 ] && [ ${OS_VERSION} -le 9 ] ## FOR RHEL 7 to 9
 then
-	echo "RHEL7 and later"
 	systemctl status kdump &> /dev/null
         rhel_dump_state=$?
         if [ ${rhel_dump_state} -eq 0 ]
@@ -397,6 +396,7 @@ then
 		else
 			echo "RESULT: WARNING"
                         echo "KDUMP DAEMON STARTED BUT NOT ENABLED"
+			echo
                         systemctl status kdump 2> /dev/null
                         echo
                 fi
@@ -426,10 +426,11 @@ BondingInfo
 ZombieProcess
 Uptime
 NtpInfo
+Kdump
 
 
 #LogMessage
 }
 
 #main
-Kdump
+NtpInfo
