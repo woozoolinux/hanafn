@@ -344,7 +344,7 @@ echo "=== Kdump Check ==="
 echo
 
 
-cat /proc/cmdline | grep crash &> /dev/null
+cat /proc/cmdline | grep crash2 &> /dev/null
 cmdline=$?
 
 if [  ${cmdline} -ne 0 ]
@@ -354,10 +354,10 @@ then
 	return
 fi
 
-if [ ${OS_VERSION} == 6 ]
+if [ ${OS_VERSION} == 6 ] ## FOR RHEL6
 then
         echo "RHEL6"
-elif [ ${OS_VERSION} -ge 7 ]
+elif [ ${OS_VERSION} -ge 7 ] && [ ${OS_VERSION} -le 9 ] ## FOR RHEL 7 to 9
 then
 	echo "RHEL7 and later"
 else
