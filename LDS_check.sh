@@ -392,12 +392,12 @@ then
                 then
                         echo "RESULT: OK"
                         echo
-			systemctl status kdump
+			systemctl status kdump 2> /dev/null
 			echo
 		else
 			echo "RESULT: WARNING"
                         echo "KDUMP DAEMON STARTED BUT NOT ENABLED"
-                        systemctl status kdump
+                        systemctl status kdump 2> /dev/null
                         echo
                 fi
 	else
