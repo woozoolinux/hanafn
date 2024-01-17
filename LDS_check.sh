@@ -412,6 +412,33 @@ echo "=== End Kdump ==="
 echo
 }
 
+MemoryInfo(){
+echo
+echo "=== MemoryInfo Check ==="
+echo
+
+cur_swap_total=$(cat /proc/meminfo | grep SwapTotal| awk '{print $2}')
+cur_swap_Free=$(cat /proc/meminfo | grep SwapFree| awk '{print $2}')
+let cur_swap_used_BYTE=$cur_swap_total-$cur_swap_Free
+
+if [ $cur_swap_used_BYTE -eq 0 ];
+then
+        cur_swap_used_percent=0
+else
+        cur_swap_used_percent=$(echo $cur_swap_used_BYTE $cur_swap_total | awk '{print $1/$2*100}'| awk '{printf "%0.2f",$1}')
+fi
+
+echo "swap_total=${cur_swap_total} Byte"
+echo "swap_free=${cur_swap_Free} Byte"
+echo "swap_used_percent=${cur_swap_used_percent}%"
+
+
+echo
+echo "=== End MemoryInfo ==="
+echo
+}
+
+
 main()
 {
 Hostname
@@ -425,10 +452,11 @@ ZombieProcess
 Uptime
 NtpInfo
 Kdump
+MemoryInfo
 
 
 #LogMessage
 }
 
 #main
-NtpInfo
+MemoryInfo
