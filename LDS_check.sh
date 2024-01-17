@@ -356,7 +356,7 @@ fi
 
 if [ ${OS_VERSION} == 6 ] ## FOR RHEL6
 then
-	service kdump status
+	service kdump status $> /dev/null
 	rhel6_dump_state=$?
 	if [ ${rhel6_dump_state} -eq 0 ]
 	then
@@ -379,13 +379,11 @@ then
                 echo "KDUMP NOT RUNNING"
 
 	fi
-fi
 
-if [ ${OS_VERSION} -ge 7 ] && [ ${OS_VERSION} -le 9 ] ## FOR RHEL 7 to 9
-
+elif [ ${OS_VERSION} -ge 7 ] && [ ${OS_VERSION} -le 9 ] ## FOR RHEL 7 to 9
 then
 	echo "RHEL7 and later"
-	systemctl status kdump
+	systemctl status kdump &> /dev/null
         rhel_dump_state=$?
         if [ ${rhel_dump_state} -eq 0 ]
         then
