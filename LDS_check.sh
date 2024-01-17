@@ -259,10 +259,10 @@ if [ ${OS_VERSION} -eq 7 ];
 then
 	echo "RHEL7"
         systemctl status ntpd &> /dev/null
-    	rhel7_ntp="$?"
+    	rhel7_ntp=$?
         systemctl status chronyd &> /dev/null
-      	rhel7_chronyd="$?"
-        if [ "$rhel7_ntp" = 0 ]
+      	rhel7_chronyd=$?
+        if [ ${rhel7_ntp} -eq 0 ]
        	then
 		cur_ntp_enable=$(systemctl is-enabled ntpd)
 		if [ ${cur_ntp_enable} == enabled ]
@@ -279,7 +279,7 @@ then
                         echo "Current Time:"
                         ntpq -p
 		fi
-    	elif [ "$rhel7_chronyd" = 0 ]
+    	elif [ ${rhel7_chronyd} -eq 0 ]
 	then
 		cur_chrony_enable=$(systemctl is-enabled chronyd)
 		if [ ${cur_chrony_enable} == enabled ]
@@ -308,8 +308,8 @@ if [ ${OS_VERSION} -ge 8 ];
 then
         echo "RHEL8 and later"
         systemctl status chronyd &> /dev/null
-        rhel8_chronyd="$?"
-        if [ "$rhel8_chronyd" = 0 ]
+        rhel8_chronyd=$?
+        if [ ${rhel8_chronyd} -eq 0 ]
 	then
 		cur_chrony8_enable=$(systemctl is-enabled chronyd)
                 if [ ${cur_chrony8_enable} == enabled ]
@@ -356,43 +356,60 @@ fi
 
 if [ ${OS_VERSION} == 6 ] ## FOR RHEL6
 then
-        echo "RHEL6"
-elif [ ${OS_VERSION} -ge 7 ] && [ ${OS_VERSION} -le 9 ] ## FOR RHEL 7 to 9
+	service kdump status
+	rhel6_dump_state=$?
+	if [ ${rhel6_dump_state} -eq 0 ]
+	then
+		cur_runlevel=$(cat /etc/inittab | grep -v ^# | grep ^id | cut -d: -f 2)
+                cur_enabled=$(chkconfig --list | grep -w kdump | cut -d${cur_runlevel} -f 2 | awk '{print $1}' | cut -d: -f2)
+		
+		if [ ${cur_enabled} == on ]
+                then
+                        echo "RESULT: OK"
+                        echo
+			service kdump status
+			echo 
+		else
+			echo "RESULT: WARNING"
+                        echo "KDUMP DAEMON STARTED BUT NOT ENABLED"
+                        service kdmup status
+		fi
+	else
+		echo "RESULT: WARNING"
+                echo "KDUMP NOT RUNNING"
+
+	fi
+fi
+
+if [ ${OS_VERSION} -ge 7 ] && [ ${OS_VERSION} -le 9 ] ## FOR RHEL 7 to 9
+
 then
 	echo "RHEL7 and later"
+	systemctl status kdump
+        rhel_dump_state=$?
+        if [ ${rhel_dump_state} -eq 0 ]
+        then
+                cur_kdump_enable=$(systemctl is-enabled kdump)
+                if [ ${cur_kdump_enable} == enabled ]
+                then
+                        echo "RESULT: OK"
+                        echo
+			systemctl status kdump
+			echo
+		else
+			echo "RESULT: WARNING"
+                        echo "KDUMP DAEMON STARTED BUT NOT ENABLED"
+                        systemctl status kdump
+                        echo
+                fi
+	else
+                echo "RESULT: WARNING"
+                echo "KDUMP DAEMON NOT STARTED"
+	fi
+
 else
 	echo "RHEL${OS_VERSION} is not support version" 
 fi
-
-#
-#if [ -e "$" ] && [ "$RHEL_VERSION" == 7 ]
-#	then
-#
-#        cat $KDCONF | egrep crashkernel 2> /dev/null > /dev/null
-#        if [ $? -eq 0 ]; then
-#
-#                local st7=`systemctl status kdump | grep -w "service; enabled;"`
-#                if [ -n "$st7" ]; then
-#
-#                        local kst=`cat /sys/kernel/kexec_crash_loaded`
-#                        local ksv7=`systemctl status kdump | grep -w "Active: active"`
-#                        if [ "$kst" -eq 1 -a -n "$ksv7" ]; then
-#                                echo "Kdump Status: $NMSG"
-#                        else
-#                                echo "Kdump Status: $WMSG"
-#                                echo "Kdump result: Kdump is not running in kernel"
-#                        fi
-#
-#                else
-#                        echo "Kdump Status: $WMSG"
-#                        echo "Kdump result: kdump is off in chkconfig"
-#                fi
-#
-#        else
-#		continue
-#	fi
-	
-
 
 echo 
 echo "=== End Kdump ==="
