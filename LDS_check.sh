@@ -225,7 +225,6 @@ echo "=== NtpInfo Check ==="
 echo 
 if [ ${OS_VERSION} -le 6 ];
 then
-        echo "RHEL6"
         service ntpd status &> /dev/null
         rhel6_ntp="$?"
         if [ "$rhel6_ntp" = 0 ]
@@ -243,6 +242,7 @@ then
                 else
                         echo "RESULT: WARNING"
                         echo "NTPD DAEMON STARTED BUT NOT ENABLED"
+			echo
                         service ntpd status
                         echo "Current Time:"
 			ntpq -p
@@ -257,7 +257,6 @@ fi
 
 if [ ${OS_VERSION} -eq 7 ];
 then
-	echo "RHEL7"
         systemctl status ntpd &> /dev/null
     	rhel7_ntp=$?
         systemctl status chronyd &> /dev/null
@@ -306,7 +305,6 @@ fi
 
 if [ ${OS_VERSION} -ge 8 ];
 then
-        echo "RHEL8 and later"
         systemctl status chronyd &> /dev/null
         rhel8_chronyd=$?
         if [ ${rhel8_chronyd} -eq 0 ]
