@@ -344,7 +344,7 @@ echo "=== Kdump Check ==="
 echo
 
 
-cat /proc/cmdline | grep crash2 &> /dev/null
+cat /proc/cmdline | grep crash &> /dev/null
 cmdline=$?
 
 if [  ${cmdline} -ne 0 ]
