@@ -25,8 +25,7 @@ if [ ! -d  "$LDS_HOME" ]; then
         mkdir -p $LDS_HOME
 fi
 
-Hostname()
-{
+Hostname(){
 echo "=== HostName Check ==="
 echo
 
@@ -38,8 +37,7 @@ echo "===  End HostName ==="
 echo
 }
 
-OsVersion()
-{
+OsVersion(){
 echo "=== OsVersion Check ==="
 echo
 
@@ -50,8 +48,7 @@ echo "=== End OsVersion ==="
 echo
 }
 
-FileSystem()
-{
+FileSystem(){
 echo
 echo "=== FileSystem Check ==="
 echo 
@@ -67,8 +64,7 @@ echo
 echo "=== End FileSystem ==="
 }
 
-LogMessage()
-{
+LogMessage(){
 echo
 echo "=== LogMessage Check ==="
 echo
@@ -88,8 +84,7 @@ echo "=== End LogMessage ==="
 
 }
 
-UserInfo()
-{
+UserInfo(){
 echo
 echo "=== UserInfo Check ==="
 echo
@@ -104,8 +99,7 @@ echo "=== End UserInfo ==="
 echo
 }
 
-NetworkPacket()
-{
+NetworkPacket(){
 echo
 echo "=== NetworkPacket Check ==="
 echo
@@ -120,8 +114,7 @@ echo "=== End NetworkPacket ==="
 echo
 }
 
-NetworkRoute()
-{
+NetworkRoute(){
 echo
 echo "=== NetworkRoute Check ==="
 echo 
@@ -132,8 +125,7 @@ echo "=== End NetworkRoute ==="
 echo
 }
 
-BondingInfo()
-{
+BondingInfo(){
 echo
 echo "=== BondingInfo Check ==="
 echo 
@@ -176,8 +168,7 @@ echo "=== End BondingInfo ==="
 echo
 }
 
-ZombieProcess()
-{
+ZombieProcess(){
 echo
 echo "=== ZombieProcess Check ==="
 echo 
@@ -201,8 +192,7 @@ echo "=== End ZombieProcess ==="
 echo
 }
 
-Uptime()
-{
+Uptime(){
 echo
 echo "=== Uptime Check ==="
 echo 
@@ -229,8 +219,7 @@ echo "=== End Uptime ==="
 echo
 }
 
-NtpInfo()
-{
+NtpInfo(){
 echo
 echo "=== NtpInfo Check ==="
 echo 
@@ -349,6 +338,66 @@ echo "=== End NtpInfo ==="
 echo
 }
 
+Kdump(){
+echo
+echo "=== Kdump Check ==="
+echo
+
+
+cat /proc/cmdline | grep crash &> /dev/null
+cmdline=$?
+
+if [  ${cmdline} -ne 0 ]
+then
+	echo "RESULT: WARNING"
+	echo "kdump memory not set"
+	return
+fi
+
+if [ ${OS_VERSION} == 6 ]
+then
+        echo "RHEL6"
+elif [ ${OS_VERSION} -ge 7 ]
+then
+	echo "RHEL7 and later"
+else
+	echo "RHEL${OS_VERSION} is not support version" 
+fi
+
+#
+#if [ -e "$" ] && [ "$RHEL_VERSION" == 7 ]
+#	then
+#
+#        cat $KDCONF | egrep crashkernel 2> /dev/null > /dev/null
+#        if [ $? -eq 0 ]; then
+#
+#                local st7=`systemctl status kdump | grep -w "service; enabled;"`
+#                if [ -n "$st7" ]; then
+#
+#                        local kst=`cat /sys/kernel/kexec_crash_loaded`
+#                        local ksv7=`systemctl status kdump | grep -w "Active: active"`
+#                        if [ "$kst" -eq 1 -a -n "$ksv7" ]; then
+#                                echo "Kdump Status: $NMSG"
+#                        else
+#                                echo "Kdump Status: $WMSG"
+#                                echo "Kdump result: Kdump is not running in kernel"
+#                        fi
+#
+#                else
+#                        echo "Kdump Status: $WMSG"
+#                        echo "Kdump result: kdump is off in chkconfig"
+#                fi
+#
+#        else
+#		continue
+#	fi
+	
+
+
+echo 
+echo "=== End Kdump ==="
+echo
+}
 
 main()
 {
@@ -367,4 +416,5 @@ NtpInfo
 #LogMessage
 }
 
-main
+#main
+Kdump
