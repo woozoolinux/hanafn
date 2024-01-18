@@ -21,6 +21,10 @@ OS_VERSION=`cat /etc/redhat-release | grep -v ^# | awk '{print $(NF-1)}' | cut -
 ## ex) NTP_Address="123.123.123.1 123.123.123.2"
 NTP_Address="111.15.30.23"
 
+## Disable Firewall
+## ex) disable_firewall="yes/no"
+disable_firewall=yes
+
 ## SET LOCAL REPO
 repo_source_dir="/iso"
 repo_file="/etc/yum.repos.d/local.repo"
@@ -33,6 +37,7 @@ Package_list="net-tools sysfsutils pciutils sysstat traceroute createrepo sos lv
 # Prompt user with warning message
 read -p "Did you finish copying the packages to the ${repo_source_dir} directory? (y/n): " userInput
 
+
 # Check if input is 'y'
 if [ "$userInput" == "y" ]; then
         continue
@@ -40,6 +45,24 @@ else
         exit 1
 fi
 
+
+###############################Beginning Script######################################
+
+Firewall()
+{
+echo "=== Firewall SET ==="
+
+if [ ${disable_firewall} == "yes" ]
+then
+	systemctl disable firewalld --now
+	echo "firewall disabled.."
+else
+	echo "firewall active"
+fi
+
+echo " === END Firewall ==="
+echo
+}
 
 
 NTP()
