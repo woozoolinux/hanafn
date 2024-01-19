@@ -460,6 +460,24 @@ echo
 }
 
 
+CpuLoad(){
+echo
+echo "=== CpuLoad Check ==="
+echo
+
+cpu_count=$(cat /proc/cpuinfo | grep processor | wc -l)
+#load_average=$(w | head -1 | awk '{print $NF}')
+load_average=1.00
+
+
+echo $cpu_count $load_average | awk '{print $2/$1*100}'| awk '{printf "%0.2f",$1}'
+
+echo
+echo "=== End CpuLoad ==="
+echo
+}
+
+
 main()
 {
 Hostname
@@ -480,4 +498,4 @@ MemoryInfo
 }
 
 #main
-MemoryInfo
+CpuLoad
