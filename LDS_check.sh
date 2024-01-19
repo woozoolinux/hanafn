@@ -466,8 +466,7 @@ echo "=== CpuLoad Check ==="
 echo
 
 cpu_count=$(cat /proc/cpuinfo | grep processor | wc -l)
-#load_average=$(w | head -1 | awk '{print $NF}' | cut -d. -f1)
-load_average=2.1
+load_average=$(w | head -1 | awk '{print $NF}' | cut -d. -f1)
 
 
 cur_load=$(echo $cpu_count $load_average | awk '{print $2/$1*100}'| awk '{printf "%0.2f",$1}')
