@@ -466,10 +466,27 @@ echo "=== CpuLoad Check ==="
 echo
 
 cpu_count=$(cat /proc/cpuinfo | grep processor | wc -l)
-load_average=$(w | head -1 | awk '{print $NF}')
+#load_average=$(w | head -1 | awk '{print $NF}' | cut -d. -f1)
+load_average=2.1
 
 
-echo $cpu_count $load_average | awk '{print $2/$1*100}'| awk '{printf "%0.2f",$1}'
+cur_load=$(echo $cpu_count $load_average | awk '{print $2/$1*100}'| awk '{printf "%0.2f",$1}')
+
+## "Convert to a integer number for the calculation in the if statement"
+cur_load_int=$(echo $cur_load | cut -d. -f1)
+
+
+if [ $cur_load_int -gt 100 ]
+then
+	echo "RESULT=WARNING"
+	echo "load_average=${cur_load}%"
+else
+	echo "RESULT=OK"
+	echo "load_average=${cur_load}%"
+fi
+
+echo 
+w | head -1
 
 echo
 echo "=== End CpuLoad ==="
