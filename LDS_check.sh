@@ -417,10 +417,25 @@ echo
 echo "=== MemoryInfo Check ==="
 echo
 
+#Memory Calculation
+# used: total - free
+# RSS:  total - free - buffers - cached
+
+
+## gatehring memory info
+cur_mem_total=$(cat /proc/meminfo | grep MemTotal| awk '{print $2}')
+cur_mem_Free=$(cat /proc/meminfo | grep MemFree| awk '{print $2}')
+cur_mem_cache=$(cat /proc/meminfo | grep ^Cached:| awk '{print $2}' )
+cur_mem_buffer=$(cat /proc/meminfo | grep ^Buffers| awk '{print $2}' )
 cur_swap_total=$(cat /proc/meminfo | grep SwapTotal| awk '{print $2}')
 cur_swap_Free=$(cat /proc/meminfo | grep SwapFree| awk '{print $2}')
-let cur_swap_used_BYTE=$cur_swap_total-$cur_swap_Free
 
+## calculation memory usage
+let cur_swap_used_BYTE=$cur_swap_total-$cur_swap_Free
+let cur_RSS_used_BYTE=$cur_mem_total-$cur_mem_Free-$cur_mem_buffer-$cur_mem_cache
+cur_RSS_used_percent=$(echo $cur_RSS_used_BYTE $cur_mem_total | awk '{print $1/$2*100}'| awk '{printf "%0.2f",$1}')
+
+## check if swap memory in use
 if [ $cur_swap_used_BYTE -eq 0 ];
 then
         cur_swap_used_percent=0
@@ -428,9 +443,15 @@ else
         cur_swap_used_percent=$(echo $cur_swap_used_BYTE $cur_swap_total | awk '{print $1/$2*100}'| awk '{printf "%0.2f",$1}')
 fi
 
-echo "swap_total=${cur_swap_total} Byte"
-echo "swap_free=${cur_swap_Free} Byte"
-echo "swap_used_percent=${cur_swap_used_percent}%"
+## print rss memory info
+echo "RSS=${cur_RSS_used_percent}%"
+
+
+## print swap memory info
+echo "SWAP=${cur_swap_used_percent}%"
+
+echo
+free -h
 
 
 echo
