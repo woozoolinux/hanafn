@@ -69,6 +69,15 @@ echo "1. df -h result:"
 df -h | grep -v tmpfs
 echo
 
+echo
+echo "=== End FileSystem ==="
+echo
+}
+InodeUsage(){
+
+echo
+echo "=== InodeUsage Check ==="
+echo 
 
 idisk_usage=$(df -Pih / | sed -e '/^[0-9]/d' -e '1d'| egrep -v "([1-8].% | .%)")
 iusage_check=$(echo $?)
@@ -86,7 +95,9 @@ echo "2. df -i result:"
 df -i | grep -v tmpfs
 echo
 
-echo "=== End FileSystem ==="
+echo
+echo "=== End InodeUsage ==="
+echo
 }
 
 LogMessage(){
@@ -523,6 +534,7 @@ main()
 Hostname
 OsVersion
 FileSystem
+InodeUsage
 UserInfo
 NetworkPacket
 NetworkRoute
@@ -540,3 +552,4 @@ CpuLoad
 
 #main
 FileSystem
+InodeUsage
