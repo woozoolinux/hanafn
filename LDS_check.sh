@@ -54,8 +54,9 @@ echo "=== FileSystem Check ==="
 echo 
 
 disk_usage=$(df -Ph / | sed -e '/^[0-9]/d' -e '1d'| egrep -v "([1-8].% | .%)")
+usage_check=$(echo $?)
 
-if [ -n ${disk_usage} ]
+if [ ${usage_check} -eq 0 ]
 then
 	echo "ok"
 else
