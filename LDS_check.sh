@@ -53,9 +53,20 @@ echo
 echo "=== FileSystem Check ==="
 echo 
 
+disk_usage=$(df -Ph / | sed -e '/^[0-9]/d' -e '1d'| egrep -v "([1-8].% | .%)")
+
+if [ -n ${disk_usage} ]
+then
+	echo "ok"
+else
+	echo "not okay"
+fi
+
 echo "1. df -h result:"
 df -h | grep -v tmpfs
 echo
+
+
 
 echo "2. df -i result:"
 df -i | grep -v tmpfs
@@ -507,10 +518,11 @@ Uptime
 NtpInfo
 Kdump
 MemoryInfo
+CpuLoad
 
 
 #LogMessage
 }
 
 #main
-CpuLoad
+FileSystem
