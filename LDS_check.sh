@@ -56,17 +56,30 @@ echo
 disk_usage=$(df -Ph / | sed -e '/^[0-9]/d' -e '1d'| egrep -v "([1-8].% | .%)")
 usage_check=$(echo $?)
 
+## If it's 0, it means that 90% or more has been detected, indicating a problematic state.
 if [ ${usage_check} -eq 0 ]
 then
-	echo "ok"
+        echo "RESULT=WARNING"
 else
-	echo "not okay"
+        echo "RESULT=OK"
 fi
+
 
 echo "1. df -h result:"
 df -h | grep -v tmpfs
 echo
 
+
+idisk_usage=$(df -Pih / | sed -e '/^[0-9]/d' -e '1d'| egrep -v "([1-8].% | .%)")
+iusage_check=$(echo $?)
+
+## If it's 0, it means that 90% or more has been detected, indicating a problematic state.
+if [ ${iusage_check} -eq 0 ]
+then
+        echo "RESULT=WARNING"
+else
+        echo "RESULT=OK"
+fi
 
 
 echo "2. df -i result:"
