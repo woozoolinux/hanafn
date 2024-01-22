@@ -4,6 +4,7 @@
 echo "=== Cureent Device Status ==="
 nmcli device status
 
+##### IMPORTANT SETTING ZONE #####
 # Variable SET
 master=bond0
 slave1=enp1s0
@@ -13,6 +14,11 @@ bond_mode=active-backup
 ip_addr=192.168.155.95/24
 gateway=192.168.155.1
 dns=8.8.8.8
+
+primary_use="yes"
+primary_interface="slave1"
+
+###################################
 
 
 # Prompt user with warning message
@@ -51,3 +57,25 @@ else
 fi
 
 
+# If the 'primary_use' variable is set to 'yes', execute the primary configuration tasks.
+if [ ${primary_use} == "yes"]
+then
+ 
+	read -p "Would you like to set enp1s0 as the bonding primary interface? (y/n): " primaryCheck
+
+	# Check if input is 'y'
+	if [ "$primaryCheck" == "y" ]
+	then
+        	echo "configuring primary interface to ${primary_interface}.."
+		nmcli con modify ${master} +bond.options "primary=${primary_interface}"
+		nmcli con up ${master}
+	else
+		echo "not configuring primary"
+	
+	fi
+
+
+else
+	echo "not configure primary interface"
+
+fi
