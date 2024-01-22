@@ -2,7 +2,7 @@
 
 # This is a script for retrieving OS information.
 # Written by Linux Data System for Hana Financial Group.
-# FileName: os_result.sh
+# FileName: sosreport_result.sh
 # Versoin : 0.1.1v
 # Date: 2024.01
 
