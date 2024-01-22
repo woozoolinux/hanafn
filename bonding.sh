@@ -58,7 +58,7 @@ fi
 
 
 # If the 'primary_use' variable is set to 'yes', execute the primary configuration tasks.
-if [ ${primary_use} == "yes"]
+if [ ${primary_use} == "yes" ]
 then
  
 	read -p "Would you like to set enp1s0 as the bonding primary interface? (y/n): " primaryCheck
