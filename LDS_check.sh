@@ -14,15 +14,29 @@ DATE=$(date +%Y%m%d)
 HOSTNAME=$(hostname)
 
 # Directory SET
-LDS_HOME=/home/LDS
-REPORT_FILE="${LDS_HOME}/OS_Monthly_Report_${HOSTNAME}_${DATE}"
+MAINTENANCE_HOME=/root/LDS/maintenance
+REPORT_FILE="${MAINTENANCE_HOME}/OS_Report_${HOSTNAME}_${DATE}"
 
 # Version Check
 OS_VERSION=`cat /etc/redhat-release | grep -v ^# | awk '{print $(NF-1)}' | cut -d. -f1`
 
+
+# Requirement Check
+rpm -qa | grep ^bc- &> /dev/null
+
+bc_package=$(echo $?)
+
+if [ ${bc_package} -ne 0 ]
+then	
+	echo "bc package is not installed"
+	echo "Error"
+	exit 1
+fi
+
+
 # check MAIN PATH
-if [ ! -d  "$LDS_HOME" ]; then
-        mkdir -p $LDS_HOME
+if [ ! -d  "${MAINTENANCE_HOME}" ]; then
+        mkdir -p ${MAINTENANCE_HOME}
 fi
 
 Hostname(){
@@ -59,22 +73,19 @@ usage_check=$(echo $?)
 ## If it's 0, it means that 90% or more has been detected, indicating a problematic state.
 if [ ${usage_check} -eq 0 ]
 then
-        echo "RESULT=WARNING"
+        echo "FileSystem_RESULT=WARNING"
 else
-        echo "RESULT=OK"
+        echo "FileSystem_RESULT=OK"
 fi
 
-
-echo "1. df -h result:"
-df -h | grep -v tmpfs
+echo
+df -Ph | grep -v tmpfs
 echo
 
 echo
 echo "=== End FileSystem ==="
-echo
 }
 InodeUsage(){
-
 echo
 echo "=== InodeUsage Check ==="
 echo 
@@ -85,19 +96,17 @@ iusage_check=$(echo $?)
 ## If it's 0, it means that 90% or more has been detected, indicating a problematic state.
 if [ ${iusage_check} -eq 0 ]
 then
-        echo "RESULT=WARNING"
+        echo "InodeUsage_RESULT=WARNING"
 else
-        echo "RESULT=OK"
+        echo "InodeUsage_RESULT=OK"
 fi
 
-
-echo "2. df -i result:"
-df -i | grep -v tmpfs
+echo
+df -Pih | grep -v tmpfs
 echo
 
 echo
 echo "=== End InodeUsage ==="
-echo
 }
 
 LogMessage(){
@@ -108,9 +117,9 @@ echo
 LOG_CHECK=$(cat /var/log/messages* | egrep "^$(date -d '1 months ago' +%h)|^$(date +%h)" | egrep -iw '(I/O error|rejecting I/O to offline device|killing request|hostbyte=DID_NO_CONNECT|mark as failed|remaining active paths|parity|Abort command issued|Hardware Error|SYN flooding|fail|error|fault|down|WARN|Call Trace|reboo)'| egrep -i -v '(warn=True|auth|segfault|cdrom)'| egrep -i -v '(auth|segfault|cdrom|fd0|sr0|vxvm)'| egrep -v 'VCS' | egrep -v 'ACPI Error:\ SMBus|ACPI Error:\ Method parse|dockerd-current|Shutting Down Daemons|Shutting down..' | wc -l)
 
   if [ "$LOG_CHECK" -eq 0 ]; then
-   echo "LOG Status: OK"
+   echo "LOG_CHECK_RESULT=OK"
   else
-   echo "LOG Status: BAD"
+   echo "LOG_CHECK_RESULT=WARNING"
   fi
 echo
 
@@ -132,7 +141,6 @@ echo "user_count = ${cur_userc}"
 echo "group_count = ${cur_groupc}"
 echo
 echo "=== End UserInfo ==="
-echo
 }
 
 NetworkPacket(){
@@ -140,12 +148,184 @@ echo
 echo "=== NetworkPacket Check ==="
 echo
 
-for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv")
- do
- ifconfig $i
- done
+## Warning Trigger Condition
+threshold=0.1
 
-echo
+if [ ${OS_VERSION} == 6 ] ## FOR RHEL6
+then
+	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters")
+        do
+		cur_packets=$(ifconfig $i | grep "RX packets" | awk '{print $2}' | cut -d: -f2)
+		cur_errors=$(ifconfig $i | grep "RX packets" | awk '{print $3}' | cut -d: -f2)
+		cur_dropped=$(ifconfig $i | grep "RX packets" | awk '{print $4}' | cut -d: -f2)
+		
+
+                echo "interface=$i"
+		
+		## In the case where the 'rx packet' is 0, it is considered OK
+		if [ ${cur_packets} -le 0 ]
+		then	
+			echo "rx_packet_error_RESULT=OK"
+			echo "rx_packet_drop_RESULT=OK"
+		else
+			## Calculate the error and drop rates
+			error_result=$(awk 'BEGIN {print ('$cur_errors'/'$cur_packets'*100)}')
+			drop_result=$(awk 'BEGIN {print ('$cur_dropped'/'$cur_packets'*100)}')
+			
+			## If the error rate is 0.1% or higher, it is considered WARNING
+			if (( $(echo "$error_result >= $threshold" | bc -l) )); then
+			        echo "rx_packet_error_RESULT=WARNING"
+	        		echo "rx_packet error rate is ${error_result}"
+			else
+	        		echo "rx_packet_error_RESULT=OK"
+			fi
+	
+	
+			## If the drop rate is 0.1% or higher, it is considered WARNING
+			if (( $(echo "$drop_result >= $threshold" | bc -l) )); then
+	        		echo "rx_packet_drop_RESULT=WARNING"
+	        		echo "rx_packet drop rate is ${drop_result}"
+			else
+	        		echo "rx_packet_drop_RESULT=OK"
+			fi
+	
+			echo
+		fi
+
+		cur_tx_packets=$(ifconfig $i | grep "TX packets" | awk '{print $2}' | cut -d: -f2)
+		cur_tx_errors=$(ifconfig $i | grep "TX packets" | awk '{print $3}' | cut -d: -f2)
+		cur_tx_dropped=$(ifconfig $i | grep "TX packets" | awk '{print $4}' | cut -d: -f2)
+
+		## In the case where the 'tx packet' is 0, it is considered OK
+		if [ ${cur_tx_packets} -le 0 ]
+		then	
+			echo "tx_packet_error_RESULT=OK"
+			echo "tx_packet_drop_RESULT=OK"
+		else
+			## Calculate the error and drop rates
+			tx_error_result=$(awk 'BEGIN {print ('$cur_tx_errors'/'$cur_tx_packets'*100)}')
+			tx_drop_result=$(awk 'BEGIN {print ('$cur_tx_dropped'/'$cur_tx_packets'*100)}')
+			
+			## If the tx error rate is 0.1% or higher, it is considered WARNING
+			if (( $(echo "$tx_error_result >= $threshold" | bc -l) )); then
+			        echo "tx_packet_error_RESULT=WARNING"
+	        		echo "tx_packet error rate is ${tx_error_result}"
+			else
+	        		echo "tx_packet_error_RESULT=OK"
+			fi
+	
+	
+			## If the tx drop rate is 0.1% or higher, it is considered WARNING
+			if (( $(echo "$tx_drop_result >= $threshold" | bc -l) )); then
+	        		echo "tx_packet_drop_RESULT=WARNING"
+	        		echo "tx_packet drop rate is ${tx_drop_result}"
+			else
+	        		echo "tx_packet_drop_RESULT=OK"
+			fi
+	
+			echo
+		fi
+                echo
+	done
+
+	## print packet info
+	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters")
+ 	do
+	 	ifconfig $i 2> /dev/null
+	done
+
+	echo
+
+
+else
+
+	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters")
+ 	do
+		cur_packets=$(ifconfig $i  | grep "RX packets" | awk '{print $3}')
+		cur_errors=$(ifconfig $i | grep RX | grep errors | awk '{print $3}')
+		cur_dropped=$(ifconfig $i | grep RX | grep errors | awk '{print $5}')
+
+		
+
+                echo "interface=$i"
+		
+		## In the case where the 'rx packet' is 0, it is considered OK
+		if [ ${cur_packets} -le 0 ]
+		then	
+			echo "rx_packet_error_RESULT=OK"
+			echo "rx_packet_drop_RESULT=OK"
+		else
+			## Calculate the error and drop rates
+			error_result=$(awk 'BEGIN {print ('$cur_errors'/'$cur_packets'*100)}')
+			drop_result=$(awk 'BEGIN {print ('$cur_dropped'/'$cur_packets'*100)}')
+			
+			## If the error rate is 0.1% or higher, it is considered WARNING
+			if (( $(echo "$error_result >= $threshold" | bc -l) )); then
+			        echo "rx_packet_error_RESULT=WARNING"
+	        		echo "rx_packet error rate is ${error_result}"
+			else
+	        		echo "rx_packet_error_RESULT=OK"
+			fi
+	
+	
+			## If the drop rate is 0.1% or higher, it is considered WARNING
+			if (( $(echo "$drop_result >= $threshold" | bc -l) )); then
+	        		echo "rx_packet_drop_RESULT=WARNING"
+	        		echo "rx_packet drop rate is ${drop_result}"
+			else
+	        		echo "rx_packet_drop_RESULT=OK"
+			fi
+	
+			echo
+		fi
+
+		cur_tx_packets=$(ifconfig $i  | grep "TX packets" | awk '{print $3}')
+		cur_tx_errors=$(ifconfig $i | grep TX | grep errors | awk '{print $3}')
+		cur_tx_dropped=$(ifconfig $i | grep TX | grep errors | awk '{print $5}')
+
+		## In the case where the 'tx packet' is 0, it is considered OK
+		if [ ${cur_tx_packets} -le 0 ]
+		then	
+			echo "tx_packet_error_RESULT=OK"
+			echo "tx_packet_drop_RESULT=OK"
+		else
+			## Calculate the error and drop rates
+			tx_error_result=$(awk 'BEGIN {print ('$cur_tx_errors'/'$cur_tx_packets'*100)}')
+			tx_drop_result=$(awk 'BEGIN {print ('$cur_tx_dropped'/'$cur_tx_packets'*100)}')
+			
+			## If the tx error rate is 0.1% or higher, it is considered WARNING
+			if (( $(echo "$tx_error_result >= $threshold" | bc -l) )); then
+			        echo "tx_packet_error_RESULT=WARNING"
+	        		echo "tx_packet error rate is ${tx_error_result}"
+			else
+	        		echo "tx_packet_error_RESULT=OK"
+			fi
+	
+	
+			## If the tx drop rate is 0.1% or higher, it is considered WARNING
+			if (( $(echo "$tx_drop_result >= $threshold" | bc -l) )); then
+	        		echo "tx_packet_drop_RESULT=WARNING"
+	        		echo "tx_packet drop rate is ${tx_drop_result}"
+			else
+	        		echo "tx_packet_drop_RESULT=OK"
+			fi
+	
+			echo
+		fi
+                echo
+	done
+
+	echo
+
+	## print packet info
+	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters")
+ 	do
+	 	ifconfig $i 2> /dev/null
+	done
+
+	echo
+fi
+
 echo "=== End NetworkPacket ==="
 echo
 }
@@ -170,7 +350,7 @@ bonFlag=0
 mbond=`lsmod | grep bond`
 if [ -z "$mbond" ];then
 	echo ""
-	echo "Bonding Status: WARNING"
+	echo "BondingInfo_RESULT=WARNING"
    	echo "bond check result: bonding module not loading"
 else
 	bondlist=`ls /proc/net/bonding/*`
@@ -184,7 +364,7 @@ else
 			bonInterface=`ls $bondlist | awk -F"/" '{print $NF}'`
 			echo ""
 			echo ""
-			echo "Bonding Status: WARNING"
+			echo "BondingInfo_RESULTWARNING"
         		echo "Check $bonInterface status!!"
 			echo ""
 			bonFlag=3
@@ -193,8 +373,7 @@ else
 
 if [ "$bonFlag" == 0 ]; then
 	echo ""
-	echo "Result"
-	echo "Bonding Status: OK"
+	echo "BondingInfo_RESULT=OK"
 fi
 
 fi
@@ -213,14 +392,15 @@ zombie=`ps aux | awk ' $8=="Z" || $8=="Z+" {print $0}' | wc -l`
 cur_zombie=`ps aux | awk ' $8=="Z" || $8=="Z+" {print $0}'`
 
  if [ "$zombie" -gt 0 ]; then
+  echo "ZombieProcess_RESULT=WARNING"
   echo "Zombie Process: $zombie "
-  echo ""
+  echo
   echo "Current zombie process status:"
   ps aux | head -1
   echo "$cur_zombie"
  else
   echo "No Zombie Process"
-  echo "Result: OK"
+  echo "ZombieProcess_RESULT=OK"
  fi
 
 echo 
@@ -242,11 +422,11 @@ if [ -n "$cur_uptime" ];
  	if [ "$days" -ge 365 ]; then
    	echo "UPTIME: $days days"
   	else
-   	echo "SYSTEM UPTIME: OK"
+   	echo "Uptime_RESULT=OK"
    	echo "UPTIME: $days days"
   	fi
   else
-  echo -e "SYSTEM UPTIME: OK"	
+  echo -e "Uptime_RESULT=OK"	
   echo "UPTIME: $cur_uptime_min min"
 fi
 
@@ -270,13 +450,13 @@ then
 
                 if [ ${cur_enabled} == on ]
                 then
-                        echo "RESULT: OK"
+                        echo "NtpInfo_RESULT: OK"
                         echo
                         service ntpd status
                         echo "Current Time:"
                         ntpq -p
                 else
-                        echo "RESULT: WARNING"
+                        echo "NtpInfo_RESULT: WARNING"
                         echo "NTPD DAEMON STARTED BUT NOT ENABLED"
 			echo
                         service ntpd status
@@ -284,7 +464,7 @@ then
 			ntpq -p
                 fi
         else
-                echo "RESULT: WARNING"
+                echo "NtpInfo_RESULT: WARNING"
                 echo "NTPD NOT RUNNING"
         fi
 fi
@@ -302,13 +482,13 @@ then
 		cur_ntp_enable=$(systemctl is-enabled ntpd)
 		if [ ${cur_ntp_enable} == enabled ]
 		then
-    			echo "RESULT: OK"
+    			echo "NtpInfo_RESULT: OK"
 			echo
 			systemctl status ntpd
 			echo
 			ntpq -p
 		else
-			echo "RESULT: WARNING"
+			echo "NtpInfo_RESULT: WARNING"
                         echo "NTPD DAEMON STARTED BUT NOT ENABLED"
 			service ntpd status
                         echo "Current Time:"
@@ -319,13 +499,13 @@ then
 		cur_chrony_enable=$(systemctl is-enabled chronyd)
 		if [ ${cur_chrony_enable} == enabled ]
 		then
-    			echo "RESULT: OK"
+    			echo "NtpInfo_RESULT: OK"
 			echo
 			systemctl status chronyd
 			echo
 			chronyc sources
 		else
-			echo "RESULT: WARNING"
+			echo "NtpInfo_RESULT: WARNING"
                         echo "CHRONYD DAEMON STARTED BUT NOT ENABLED"
 			echo
                         systemctl status chronyd
@@ -334,7 +514,7 @@ then
 
 		fi
     	else
-		echo "RESULT: WARNING"	
+		echo "NtpInfo_RESULT: WARNING"	
 		echo "NTPD DAEMON NOT STARTED"
     	fi
 fi
@@ -348,20 +528,20 @@ then
 		cur_chrony8_enable=$(systemctl is-enabled chronyd)
                 if [ ${cur_chrony8_enable} == enabled ]
                 then
-                	echo "RESULT: OK"
+                	echo "NtpInfo=RESULT: OK"
 			echo
                 	systemctl status chronyd 2> /dev/null
 			echo
 			chronyc sources
 		else
-			echo "RESULT: WARNING"
+			echo "NtpInfo=RESULT: WARNING"
                         echo "CHRONYD DAEMON STARTED BUT NOT ENABLED"
 			systemctl status chronyd 2> /dev/null
                         echo
                         chronyc sources
 		fi
         else
-                echo "RESULT: WARNING"
+                echo "NtpInfo=RESULT: WARNING"
                 echo "NTPD DAEMON NOT STARTED"
         fi
 
@@ -383,7 +563,7 @@ cmdline=$?
 
 if [  ${cmdline} -ne 0 ]
 then
-	echo "RESULT: WARNING"
+	echo "Kdump_RESULT: WARNING"
 	echo "kdump memory not set"
 	return
 fi
@@ -399,17 +579,17 @@ then
 		
 		if [ ${cur_enabled} == on ]
                 then
-                        echo "RESULT: OK"
+                        echo "Kdump_RESULT: OK"
                         echo
 			service kdump status
 			echo 
 		else
-			echo "RESULT: WARNING"
+			echo "Kdump_RESULT: WARNING"
                         echo "KDUMP DAEMON STARTED BUT NOT ENABLED"
                         service kdmup status
 		fi
 	else
-		echo "RESULT: WARNING"
+		echo "Kdump_RESULT: WARNING"
                 echo "KDUMP NOT RUNNING"
 
 	fi
@@ -423,19 +603,19 @@ then
                 cur_kdump_enable=$(systemctl is-enabled kdump)
                 if [ ${cur_kdump_enable} == enabled ]
                 then
-                        echo "RESULT: OK"
+                        echo "Kdump_RESULT: OK"
                         echo
 			systemctl status kdump 2> /dev/null
 			echo
 		else
-			echo "RESULT: WARNING"
+			echo "Kdump_RESULT: WARNING"
                         echo "KDUMP DAEMON STARTED BUT NOT ENABLED"
 			echo
                         systemctl status kdump 2> /dev/null
                         echo
                 fi
 	else
-                echo "RESULT: WARNING"
+                echo "Kdump_RESULT: WARNING"
                 echo "KDUMP DAEMON NOT STARTED"
 	fi
 
@@ -479,12 +659,26 @@ else
         cur_swap_used_percent=$(echo $cur_swap_used_BYTE $cur_swap_total | awk '{print $1/$2*100}'| awk '{printf "%0.2f",$1}')
 fi
 
-## print rss memory info
-echo "RSS=${cur_RSS_used_percent}%"
+## Warning when RSS memory usage exceeds 80
+if (( $(echo "${cur_RSS_used_percent} >= 80" | bc -l) )); then
+    	echo "rss_memory_RESULT=WARNING"
+	echo "RSS=${cur_RSS_used_percent}%"
+else	
+	echo "rss_memory_RESULT=OK"
+	echo "RSS=${cur_RSS_used_percent}%"
+fi
 
+echo
 
-## print swap memory info
-echo "SWAP=${cur_swap_used_percent}%"
+## Warning when swap memory usage exceeds 50
+if (( $(echo "${cur_swap_used_percent} >= 50" | bc -l) )); then
+        echo "swap_memory_RESULT=WARNING"
+	echo "SWAP=${cur_swap_used_percent}%"
+else
+        echo "swap_memory_RESULT=OK"
+	echo "SWAP=${cur_swap_used_percent}%"
+fi
+
 
 echo
 free -h
@@ -502,23 +696,23 @@ echo "=== CpuLoad Check ==="
 echo
 
 cpu_count=$(cat /proc/cpuinfo | grep processor | wc -l)
-load_average=$(w | head -1 | awk '{print $NF}' | cut -d. -f1)
+load_average=$(w | head -1 | awk '{print $NF}')
 
 
 cur_load=$(echo $cpu_count $load_average | awk '{print $2/$1*100}'| awk '{printf "%0.2f",$1}')
 
-## "Convert to a integer number for the calculation in the if statement"
-cur_load_int=$(echo $cur_load | cut -d. -f1)
 
-
-if [ $cur_load_int -gt 100 ]
-then
-	echo "RESULT=WARNING"
+### Warning when load average exceeds 90
+if (( $(echo "${cur_load} >= 90" | bc -l) )); then
+	echo "CpuLoad_RESULT=WARNING"
 	echo "load_average=${cur_load}%"
+	echo "cpu_count=${cpu_count}"
 else
-	echo "RESULT=OK"
+	echo "CpuLoad_RESULT=OK"
 	echo "load_average=${cur_load}%"
+	echo "cpu_count=${cpu_count}"
 fi
+
 
 echo 
 w | head -1
@@ -531,25 +725,21 @@ echo
 
 main()
 {
-Hostname
-OsVersion
-FileSystem
-InodeUsage
-UserInfo
-NetworkPacket
-NetworkRoute
-BondingInfo
-ZombieProcess
-Uptime
-NtpInfo
-Kdump
-MemoryInfo
-CpuLoad
-
-
-#LogMessage
+Hostname       >> ${REPORT_FILE}
+OsVersion      >> ${REPORT_FILE}
+FileSystem     >> ${REPORT_FILE}
+InodeUsage     >> ${REPORT_FILE}
+UserInfo       >> ${REPORT_FILE}
+NetworkPacket  >> ${REPORT_FILE}
+NetworkRoute   >> ${REPORT_FILE}
+BondingInfo    >> ${REPORT_FILE}
+ZombieProcess  >> ${REPORT_FILE}
+Uptime         >> ${REPORT_FILE}
+NtpInfo        >> ${REPORT_FILE}
+Kdump          >> ${REPORT_FILE}
+MemoryInfo     >> ${REPORT_FILE}
+CpuLoad        >> ${REPORT_FILE}
+LogMessage     >> ${REPORT_FILE}
 }
 
-#main
-FileSystem
-InodeUsage
+main
