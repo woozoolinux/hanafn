@@ -3,7 +3,7 @@
 # This is System check script and available in RHEL6, RHEL7, RHEL8, RHEL9 version.
 # Written by Linux Data System for Hana Financial Group.
 # FileName: LDS_check.sh
-# Versoin : 0.1.1v
+# Versoin : 0.1.2v
 # Date: 2024.01
 
 # Language SET
@@ -12,13 +12,6 @@ LANG=C
 # Vairable SET
 DATE=$(date +%Y%m%d)
 HOSTNAME=$(hostname)
-
-# Directory SET
-MAINTENANCE_HOME=/root/LDS/maintenance
-REPORT_FILE="${MAINTENANCE_HOME}/OS_Report_${HOSTNAME}_${DATE}"
-
-# Version Check
-OS_VERSION=`cat /etc/redhat-release | grep -v ^# | awk '{print $(NF-1)}' | cut -d. -f1`
 
 
 # Requirement Check
@@ -33,11 +26,37 @@ then
 	exit 1
 fi
 
+# Directory SET
+MAINTENANCE_HOME=/root/LDS/maintenance
+REPORT_FILE="${MAINTENANCE_HOME}/OS_Report_${HOSTNAME}_${DATE}"
+
+if [ -f "$REPORT_FILE" ]; then
+    echo "$REPORT_FILE already exists. Exiting script."
+    exit 1
+fi
+
+# Version Check
+OS_VERSION=`cat /etc/redhat-release | grep -v ^# | awk '{print $(NF-1)}' | cut -d. -f1`
+
+
+
 
 # check MAIN PATH
 if [ ! -d  "${MAINTENANCE_HOME}" ]; then
         mkdir -p ${MAINTENANCE_HOME}
 fi
+
+SystemInfo(){
+echo "=== SystemInfo Check ==="
+echo
+
+cur_systeminfo=$(dmidecode -t system | grep "System Information" -A3)
+echo "${cur_systeminfo}"
+
+echo
+echo "===  End SystemInfo ==="
+echo
+}
 
 Hostname(){
 echo "=== HostName Check ==="
@@ -48,6 +67,18 @@ echo "hostname = ${cur_hostname}"
 
 echo
 echo "===  End HostName ==="
+echo
+}
+
+kernelParameter(){
+echo "=== kernelBootParameter Check ==="
+echo
+
+cur_kernelParameter=$(cat /proc/cmdline)
+echo "hostname = ${cur_kernelParameter}"
+
+echo
+echo "===  End kernelBootParameter ==="
 echo
 }
 
@@ -114,7 +145,7 @@ echo
 echo "=== LogMessage Check ==="
 echo
 
-LOG_CHECK=$(cat /var/log/messages* | egrep "^$(date -d '1 months ago' +%h)|^$(date +%h)" | egrep -iw '(I/O error|rejecting I/O to offline device|killing request|hostbyte=DID_NO_CONNECT|mark as failed|remaining active paths|parity|Abort command issued|Hardware Error|SYN flooding|fail|error|fault|down|WARN|Call Trace|reboo)'| egrep -i -v '(warn=True|auth|segfault|cdrom)'| egrep -i -v '(auth|segfault|cdrom|fd0|sr0|vxvm)'| egrep -v 'VCS' | egrep -v 'ACPI Error:\ SMBus|ACPI Error:\ Method parse|dockerd-current|Shutting Down Daemons|Shutting down..' | wc -l)
+LOG_CHECK=$(cat /var/log/messages* | egrep "^$(date -d '1 months ago' +%h)|^$(date +%h)" | egrep -iw '(I/O error|rejecting I/O to offline device|killing request|hostbyte=DID_NO_CONNECT|mark as failed|remaining active paths|parity|Abort command issued|Hardware Error|SYN flooding|fail|error|fault|down|WARN|Call Trace|reboo)'| egrep -i -v '(warn=True|auth|segfault|cdrom)'| egrep -i -v '(auth|segfault|cdrom|fd0|sr0|vxvm)'| egrep -v 'VCS' | egrep -v 'ACPI Error:\ SMBus|ACPI Error:\ Method parse|dockerd-current|Shutting Down Daemons|Shutting down..|sftp-server' | wc -l)
 
   if [ "$LOG_CHECK" -eq 0 ]; then
    echo "LOG_CHECK_RESULT=OK"
@@ -123,7 +154,7 @@ LOG_CHECK=$(cat /var/log/messages* | egrep "^$(date -d '1 months ago' +%h)|^$(da
   fi
 echo
 
-cat /var/log/messages* | egrep "^$(date -d '1 months ago' +%h)|^$(date +%h)" | egrep -iw '(I/O error|rejecting I/O to offline device|killing request|hostbyte=DID_NO_CONNECT|mark as failed|remaining active paths|parity|Abort command issued|Hardware Error|SYN flooding|fail|error|fault|down|WARN|Call Trace|reboo)'| egrep -i -v '(warn=True|auth|segfault|cdrom)'| egrep -i -v '(auth|segfault|cdrom|fd0|sr0|vxvm)'| egrep -v 'VCS' | egrep -v 'ACPI Error:\ SMBus|ACPI Error:\ Method parse|dockerd-current|Shutting Down Daemons|Shutting down..'
+cat /var/log/messages* | egrep "^$(date -d '1 months ago' +%h)|^$(date +%h)" | egrep -iw '(I/O error|rejecting I/O to offline device|killing request|hostbyte=DID_NO_CONNECT|mark as failed|remaining active paths|parity|Abort command issued|Hardware Error|SYN flooding|fail|error|fault|down|WARN|Call Trace|reboo)'| egrep -i -v '(warn=True|auth|segfault|cdrom)'| egrep -i -v '(auth|segfault|cdrom|fd0|sr0|vxvm)'| egrep -v 'VCS' | egrep -v 'ACPI Error:\ SMBus|ACPI Error:\ Method parse|dockerd-current|Shutting Down Daemons|Shutting down..|sftp-server'
 echo
 echo "=== End LogMessage ==="
 
@@ -153,7 +184,7 @@ threshold=0.1
 
 if [ ${OS_VERSION} == 6 ] ## FOR RHEL6
 then
-	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters")
+	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters|veth")
         do
 		cur_packets=$(ifconfig $i | grep "RX packets" | awk '{print $2}' | cut -d: -f2)
 		cur_errors=$(ifconfig $i | grep "RX packets" | awk '{print $3}' | cut -d: -f2)
@@ -229,7 +260,7 @@ then
 	done
 
 	## print packet info
-	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters")
+	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters|veth")
  	do
 	 	ifconfig $i 2> /dev/null
 	done
@@ -237,9 +268,9 @@ then
 	echo
 
 
-else
+else	### FOR RHEL7 or higher
 
-	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters")
+	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters|veth")
  	do
 		cur_packets=$(ifconfig $i  | grep "RX packets" | awk '{print $3}')
 		cur_errors=$(ifconfig $i | grep RX | grep errors | awk '{print $3}')
@@ -318,7 +349,7 @@ else
 	echo
 
 	## print packet info
-	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters")
+	for i in $(ls /sys/class/net/ | egrep -v "vnet|lo|macv|bonding_masters|veth")
  	do
 	 	ifconfig $i 2> /dev/null
 	done
@@ -346,37 +377,62 @@ echo
 echo "=== BondingInfo Check ==="
 echo 
 
-bonFlag=0
+### If teaming is in use print team status
+if [ $(nmcli connection show 2> /dev/null | awk '$3 == "team" {print $1}' | wc -l) -ne 0 ]; then
+
+        for team in $(nmcli connection show | awk '$3 == "team" {print $1}')
+        do
+        teamdctl ${team} state > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+                if [ $(teamdctl ${team} state view -v | grep ifindex: -B1 | egrep -v "ifindex|\-" | wc -l) -eq 2 ]; then
+                        echo "TeamInfo_RESULT=OK"
+                else
+                        echo "TeamInfo_RESULT=WARNING"
+                fi
+
+                ### print teaming info
+                echo
+                echo "interface = ${team}"
+                echo
+                teamdctl ${team} state 2> /dev/null
+        fi
+        done
+
+fi
+
+
+bonFlag=3
 mbond=`lsmod | grep bond`
 if [ -z "$mbond" ];then
-	echo ""
-	echo "BondingInfo_RESULT=WARNING"
-   	echo "bond check result: bonding module not loading"
+        echo ""
+        echo "BondingInfo_RESULT=WARNING"
+        echo "bond check result: bonding module not loading"
 else
-	bondlist=`ls /proc/net/bonding/*`
-	for i in $bondlist; do
-		echo "=${bondlist} Bonding Status="
-		cat $i
-		bondNum=`cat $i | egrep -A1 "Slave Interface"  | grep up| wc -l`
-		if [ "$bondNum" == 2 ]; then
-			continue			
-		else
-			bonInterface=`ls $bondlist | awk -F"/" '{print $NF}'`
-			echo ""
-			echo ""
-			echo "BondingInfo_RESULTWARNING"
-        		echo "Check $bonInterface status!!"
-			echo ""
-			bonFlag=3
-		fi
-	done
+        bondlist=`ls /proc/net/bonding/* 2> /dev/null`
+        for i in $bondlist; do
+                echo "interface = ${i}"
+                cat $i
+                bondNum=`cat $i | egrep -A1 "Slave Interface"  | grep up| wc -l`
+                if [ "$bondNum" == 2 ]; then
+                        bonFlag=0
+                else
+                        bonInterface=`ls $bondlist | awk -F"/" '{print $NF}'`
+                        echo ""
+                        echo ""
+                        echo "BondingInfo_RESULT=WARNING"
+                        echo "Check $bonInterface status!!"
+                        echo ""
+                        bonFlag=3
+                fi
+        done
 
 if [ "$bonFlag" == 0 ]; then
-	echo ""
-	echo "BondingInfo_RESULT=OK"
+        echo ""
+        echo "BondingInfo_RESULT=OK"
 fi
 
 fi
+
 
 echo 
 echo "=== End BondingInfo ==="
@@ -570,7 +626,7 @@ fi
 
 if [ ${OS_VERSION} == 6 ] ## FOR RHEL6
 then
-	service kdump status $> /dev/null
+	service kdump status &> /dev/null
 	rhel6_dump_state=$?
 	if [ ${rhel6_dump_state} -eq 0 ]
 	then
@@ -725,7 +781,9 @@ echo
 
 main()
 {
+SystemInfo     >> ${REPORT_FILE}
 Hostname       >> ${REPORT_FILE}
+kernelParameter>> ${REPORT_FILE}
 OsVersion      >> ${REPORT_FILE}
 FileSystem     >> ${REPORT_FILE}
 InodeUsage     >> ${REPORT_FILE}
